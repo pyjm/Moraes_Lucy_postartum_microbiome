@@ -1,0 +1,3 @@
+#Sequences filtered out during QIIME2 quality control were investigated using NCBI BLAST nucleotide database.
+
+blastn -db nt -query dna-sequences.fasta -out blast_results.out -remote
