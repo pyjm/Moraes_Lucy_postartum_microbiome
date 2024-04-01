@@ -1,0 +1,164 @@
+#Importing paired-end sequences, Demultiplexing, and trimming adapters (U515F/806R)
+
+qiime tools import \
+  --type 'SampleData[PairedEndSequencesWithQuality]' \
+  --input-path manifest_METRITIS.txt\
+  --output-path paired-end-demux.qza \
+  --input-format PairedEndFastqManifestPhred33V2
+
+qiime demux summarize \
+  --i-data paired-end-demux.qza\
+  --o-visualization demux.qzv
+
+qiime cutadapt trim-paired\
+  --i-demultiplexed-sequences paired-end-demux.qza\
+  --p-cores 10\
+  --p-front-f GTGCCAGCMGCCGCGGTAA\
+  --p-front-r GGACTACHVGGGTWTCTAAT\
+  --p-discard-untrimmed \
+  --o-trimmed-sequences trimmed-paired-end-demux.qza
+
+qiime demux summarize\
+  --i-data trimmed-paired-end-demux.qza\
+  --o-visualization trimmed-paired-end-demux.qzv
+
+#Sequence quality control and feature table construction using Dada2
+
+qiime dada2 denoise-paired\
+  --i-demultiplexed-seqs trimmed-paired-end-demux.qza\
+  --p-trim-left-f 0\
+  --p-trim-left-r 0\
+  --p-trunc-len-f 162\
+  --p-trunc-len-r 162\
+  --o-table table.qza\
+  --o-representative-sequences rep-seqs.qza\
+  --o-denoising-stats denoising-stats.qza
+
+qiime feature-table tabulate-seqs \
+  --i-data rep-seqs.qza \
+  --o-visualization rep-seqs.qzv
+
+qiime metadata tabulate \
+  --m-input-file denoising-stats.qza \
+  --o-visualization denoising-stats-dada2.qzv
+
+#QIIME2 quality control to remove contaminant sequences
+
+qiime tools import \
+  --input-path /quality_control_DADA2/gg_13_8_otus/rep_set/99_otus.fasta \
+  --output-path 99_otus_sequences.qza \
+  --type 'FeatureData[Sequence]'
+
+qiime quality-control exclude-seqs \
+  --i-query-sequences rep-seqs.qza \
+  --i-reference-sequences 99_otus_sequences.qza\
+  --p-method vsearch \
+  --p-perc-identity 0.60 \
+  --p-perc-query-aligned 0.95 \
+  --p-threads 10 \
+  --o-sequence-hits hits.qza \
+  --o-sequence-misses misses.qza \
+  --verbose
+
+qiime feature-table filter-features \
+  --i-table table.qza \
+  --m-metadata-file misses.qza \
+  --o-filtered-table no-miss-table-dada2.qza \
+  --p-exclude-ids
+
+qiime metadata tabulate \
+  --m-input-file hits.qza\
+  --o-visualization hits.qzv
+
+qiime metadata tabulate\
+  --m-input-file misses.qza\
+  --o-visualization misses.qzv
+
+#Generate .fastq files from sequences that were filtered out for BLAST
+
+qiime tools export \
+  --input-path misses.qza\
+  --output-path exported-feature-table\
+
+#Selecting only swab samples collected on Day7
+
+qiime feature-table filter-samples \
+  --i-table no-miss-table-dada2.qza\
+  --m-metadata-file POSTPARTUM_mapping_sample_key.txt\
+  --p-where "[Site]='D7'"\
+  --p-no-exclude-ids \
+  --o-filtered-table only-DAY7_no-miss-table-dada2.qza
+
+#Removing Cow 3489, originally diagnosed as healthy on day 7 but became sick on day 11.
+qiime feature-table filter-samples \
+  --i-table only-DAY7_no-miss-table-dada2.qza\
+  --m-metadata-file POSTPARTUM_mapping_sample_key.txt\
+  --p-where "[Cow_ID]='Cow_3489'"\
+  --p-exclude-ids \
+  --o-filtered-table NO3489_only-DAY7_no-miss-table-dada2.qza 
+
+#FeatureTable and FeatureData summaries
+qiime feature-table summarize \
+  --i-table NO3489_only-DAY7_no-miss-table-dada2.qza\
+  --o-visualization NO3489_only-DAY7_no-miss-table-dada2.qzv\
+  --m-sample-metadata-file POSTPARTUM_mapping_sample_key.txt
+
+#Generate a tree for phylogenetic diversity analyses
+
+qiime phylogeny align-to-tree-mafft-fasttree \
+  --i-sequences hits.qza \
+  --o-alignment aligned-rep-seqs.qza \
+  --o-masked-alignment masked-aligned-rep-seqs.qza \
+  --o-tree unrooted-tree.qza \
+  --o-rooted-tree rooted-tree.qza
+
+qiime diversity core-metrics-phylogenetic\
+  --i-phylogeny rooted-tree.qza\
+  --i-table NO3489_only-DAY7_no-miss-table-dada2.qza\
+  --p-sampling-depth 15000\
+  --m-metadata-file POSTPARTUM_mapping_sample_key.txt\
+  --output-dir core-metrics-results
+
+#Alpha diversity
+
+qiime diversity alpha-group-significance \
+  --i-alpha-diversity core-metrics-results/faith_pd_vector.qza \
+  --m-metadata-file POSTPARTUM_mapping_sample_key.txt\
+  --o-visualization core-metrics-results/faith-pd-group-significance.qzv
+
+qiime diversity alpha-group-significance \
+  --i-alpha-diversity core-metrics-results/evenness_vector.qza \
+  --m-metadata-file POSTPARTUM_mapping_sample_key.txt\
+  --o-visualization core-metrics-results/evenness-group-significance.qzv
+
+#Beta diversity
+
+qiime diversity beta-group-significance \
+  --i-distance-matrix core-metrics-results/unweighted_unifrac_distance_matrix.qza \
+  --m-metadata-file POSTPARTUM_mapping_sample_key.txt\
+  --m-metadata-column Class\
+  --o-visualization core-metrics-results/unweighted-unifrac-Class-significance.qzv \
+  --p-pairwise
+
+#Taxonomic analysis
+
+qiime feature-classifier classify-sklearn \
+  --i-classifier silva-138-99-515-806-nb-classifier.qza\
+  --i-reads hits.qza\
+  --o-classification taxonomy.qza
+
+qiime metadata tabulate \
+  --m-input-file taxonomy.qza \
+  --o-visualization taxonomy.qzv
+
+#Collapsing features to species level when available
+
+qiime taxa collapse \
+  --i-table NO3489_only-DAY7_no-miss-table-dada2.qza\
+  --i-taxonomy taxonomy.qza\
+  --p-level 7\
+  --o-collapsed-table Collapsed-NO3489_only-DAY7_no-miss-table-dada2.qza
+
+qiime metadata tabulate \
+  --m-input-file Collapsed-NO3489_only-DAY7_no-miss-table-dada2.qza\
+  --o-visualization Collapsed-NO3489_only-DAY7_no-miss-table-dada2.qzv
