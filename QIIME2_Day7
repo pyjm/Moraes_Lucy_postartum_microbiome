@@ -1,3 +1,5 @@
+##QIIME2 pipeline - Day 7
+
 #Importing paired-end sequences, Demultiplexing, and trimming adapters (U515F/806R)
 
 qiime tools import \
