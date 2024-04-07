@@ -1,0 +1,39 @@
+
+#Songbird Null model
+
+songbird multinomial \
+        --input-biom Collapsed-only-DAY30_only_horns-table-dada2.biom \
+        --metadata-file POSTPARTUM_mapping_sample_key.txt\
+        --formula "1" \
+        --epochs 10000 \
+        --differential-prior 0.5 \
+        --summary-interval 1 \
+        --summary-dir Null_results
+
+#Songbird model with only the variable for flush phenotype.
+
+songbird multinomial \
+        --input-biom Collapsed-only-DAY30_only_horns-table-dada2.biom\
+        --metadata-file POSTPARTUM_mapping_sample_key.txt\
+        --formula "OBS" \
+        --epochs 10000 \
+        --differential-prior 0.5 \
+        --summary-interval 1 \
+        --summary-dir OBS_results
+
+#Songbird Full model - The complete “full model” includes the information of flush phenotype, cow identification, disease status at 7 to 10 d postpartum (healthy vs metritis), antibiotic treatment (yes or no), and plasma progesterone concentrations at the time of slaughter (indicative of cyclicity).
+
+songbird multinomial \
+        --input-biom Collapsed-only-DAY30_only_horns-table-dada2.biom\
+        --metadata-file POSTPARTUM_mapping_sample_key.txt\
+        --formula "OBS+Class+TRT+Cow_ID+P4" \
+        --epochs 10000 \
+        --differential-prior 0.5 \
+        --summary-interval 1 \
+        --summary-dir Full_results
+
+#Outputs from the three models were evaluated using TensorBoard, a visualization toolkit of Tensorflow 
+
+tensorboard --logdir .
+
+

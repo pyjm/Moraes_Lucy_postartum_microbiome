@@ -1,0 +1,67 @@
+
+qiime feature-table filter-samples \
+  --i-table only-DAY30_no-miss-table-dada2.qza\
+  --m-metadata-file POSTPARTUM_mapping_sample_key.txt\
+  --p-where "[Site]='External'"\
+  --p-exclude-ids \
+  --o-filtered-table only-DAY30_only_horns-table-dada2.qza
+
+###FeatureTable and FeatureData summaries
+qiime feature-table summarize \
+  --i-table only-DAY30_only_horns-table-dada2.qza\
+  --o-visualization only-DAY30_only_horns-table-dada2.qzv\
+  --m-sample-metadata-file POSTPARTUM_mapping_sample_key.txt
+
+qiime diversity core-metrics-phylogenetic\
+  --i-phylogeny rooted-tree.qza\
+  --i-table only-DAY30_only_horns-table-dada2.qza\
+  --p-sampling-depth 1000\
+  --m-metadata-file POSTPARTUM_mapping_sample_key.txt\
+  --output-dir core-metrics-results
+
+#Alpha diversity
+
+qiime diversity alpha-group-significance \
+  --i-alpha-diversity core-metrics-results/faith_pd_vector.qza \
+  --m-metadata-file POSTPARTUM_mapping_sample_key.txt\
+  --o-visualization core-metrics-results/faith-pd-group-significance.qzv
+
+qiime diversity alpha-group-significance \
+  --i-alpha-diversity core-metrics-results/evenness_vector.qza \
+  --m-metadata-file POSTPARTUM_mapping_sample_key.txt\
+  --o-visualization core-metrics-results/evenness-group-significance.qzv
+
+Beta diversity
+
+qiime diversity beta-group-significance \
+  --i-distance-matrix core-metrics-results/unweighted_unifrac_distance_matrix.qza \
+  --m-metadata-file POSTPARTUM_mapping_sample_key.txt\
+  --m-metadata-column OBS\
+  --o-visualization core-metrics-results/unweighted-unifrac-body-site-significance.qzv \
+  --p-pairwise
+
+qiime diversity beta-group-significance \
+  --i-distance-matrix core-metrics-results/unweighted_unifrac_distance_matrix.qza \
+  --m-metadata-file POSTPARTUM_mapping_sample_key.txt\
+  --m-metadata-column Class\
+  --o-visualization core-metrics-results/unweighted-unifrac-Class-significance.qzv \
+  --p-pairwise
+
+qiime diversity beta-group-significance \
+  --i-distance-matrix core-metrics-results/unweighted_unifrac_distance_matrix.qza \
+  --m-metadata-file POSTPARTUM_mapping_sample_key.txt\
+  --m-metadata-column TRT\
+  --o-visualization core-metrics-results/unweighted-unifrac-TRT-group-significance.qzv \
+  --p-pairwise
+
+#Collapsing features to species level 
+
+qiime taxa collapse \
+  --i-table only-DAY30_only_horns-table-dada2.qza\
+  --i-taxonomy taxonomy.qza\
+  --p-level 7\
+  --o-collapsed-table Collapsed-only-DAY30_only_horns-table-dada2.qza
+
+qiime metadata tabulate \
+  --m-input-file Collapsed-only-DAY30_only_horns-table-dada2.qza\
+  --o-visualization Collapsed-only-DAY30_only_horns-table-dada2.qzv

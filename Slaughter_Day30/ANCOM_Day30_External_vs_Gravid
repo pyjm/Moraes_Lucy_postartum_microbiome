@@ -1,0 +1,47 @@
+#Filtering for mantaining only External vs Gravid
+
+qiime feature-table filter-samples \
+  --i-table Collapsed-only-DAY30_no-miss-table-dada2.qza\
+  --m-metadata-file POSTPARTUM_mapping_sample_key.txt\
+  --p-where "[Site]='Non-Gravid_horn'"\
+  --p-exclude-ids\
+  --o-filtered-table NO-Non-Gravid-D30-table.qza
+
+#FeatureTable and FeatureData summaries
+
+qiime feature-table summarize \
+  --i-table NO-Non-Gravid-D30-table.qza\
+  --o-visualization NO-Non-Gravid-D30-table.qzv\
+  --m-sample-metadata-file POSTPARTUM_mapping_sample_key.txt
+
+qiime feature-table filter-features \
+    --i-table NO-Non-Gravid-D30-table.qza\
+    --p-min-frequency 10 \
+    --p-min-samples 2\
+    --o-filtered-table feature-frequency-grouped_by_taxa.qza
+
+#Python script to remove features with low variance (less than 10e-4). 
+
+import qiime2
+from biom import Table
+import numpy as np
+
+table = qiime2.Artifact.load('feature-frequency-grouped_by_taxa.qza').view(Table)
+filter_func = lambda v, i, m: np.var(v) > 10e-4
+table.filter(filter_func, axis='observation')
+filtered_table_artifact = qiime2.Artifact.import_data("FeatureTable[Frequency]", table)
+filtered_table_artifact.save("variance-filtered-table.qza")
+
+#QIIME2 add-pseudocount plugin was used to add one count to every feature, allowing ANCOM analysis to be performed on features with zero counts.
+
+qiime composition add-pseudocount \
+  --i-table variance-filtered-table.qza\
+  --o-composition-table comp-Day30_EXT_vs_Gravid-table.qza
+
+
+#QIIME2 Analysis of Composition of Microbes (ANCOM).
+qiime composition ancom \
+  --i-table comp-Day30_EXT_vs_Gravid-table.qza\
+  --m-metadata-file POSTPARTUM_mapping_sample_key.txt\
+  --m-metadata-column Site\
+  --o-visualization ANCOM-comp-Day30_EXT_vs_Gravid-table.qzv

@@ -1,0 +1,95 @@
+
+# Generate a null model
+qiime songbird multinomial \
+    --i-table  Collapsed-only-DAY30_only_horns-table-dada2.qza\
+    --m-metadata-file POSTPARTUM_mapping_sample_key.txt\
+    --p-formula "1" \
+    --p-epochs 10000 \
+    --p-differential-prior 0.5 \
+    --p-summary-interval 1 \
+    --o-differentials null-diff.qza \
+    --o-regression-stats null-stats.qza \
+    --o-regression-biplot null-biplot.qza
+
+#Regression using only the flush phenotype variable "OBS"
+qiime songbird multinomial \
+  --i-table Collapsed-only-DAY30_only_horns-table-dada2.qza\
+  --m-metadata-file POSTPARTUM_mapping_sample_key.txt\
+  --p-formula "OBS" \
+  --p-epochs 10000 \
+  --p-min-sample-count 1000\
+  --p-min-feature-count 10\
+  --p-differential-prior 0.5\
+  --p-summary-interval 1 \
+  --o-differentials OBS_differentials.qza \
+  --o-regression-stats OBS_regression-stats.qza \
+  --o-regression-biplot OBS_regression-biplot.qza
+
+qiime songbird summarize-single \
+  --i-regression-stats OBS_regression-stats.qza \
+  --o-visualization OBS_regression-summary.qzv
+
+#Regression using the "full model". The complete “full model” includes the information of flush phenotype, cow identification, disease status at 7 to 10 d postpartum (healthy vs metritis), antibiotic treatment (yes or no), and plasma progesterone concentrations at the time of slaughter (indicative of cyclicity) represented by the orange line. 
+
+qiime songbird multinomial \
+  --i-table Collapsed-only-DAY30_only_horns-table-dada2.qza\
+  --m-metadata-file POSTPARTUM_mapping_sample_key.txt\
+  --p-formula "OBS+Class+TRT+Cow_ID+P4" \
+  --p-epochs 10000 \
+  --p-min-sample-count 1000\
+  --p-min-feature-count 10\
+  --p-differential-prior 0.5\
+  --p-summary-interval 1 \
+  --o-differentials Full_model_differentials.qza \
+  --o-regression-stats Full_model_regression-stats.qza \
+  --o-regression-biplot Full_model_regression-biplot.qza
+
+## Visualize the OBS model's regression stats *and* the null model's
+qiime songbird summarize-paired \
+    --i-regression-stats OBS_regression-stats.qza \
+    --i-baseline-stats null-stats.qza \
+    --o-visualization OBSmodel_Null_paired-summary.qzv
+
+## Visualize the OBS model's regression stats *and* the null model's
+qiime songbird summarize-paired \
+    --i-regression-stats Full_model_regression-stats.qza \
+    --i-baseline-stats null-stats.qza \
+    --o-visualization Fullmodel_Null_paired-summary.qzv
+
+# Converting .qza to .biom to run "standalone" Songbird
+qiime tools export \
+  --input-path Collapsed-only-DAY30_only_horns-table-dada2.qza\
+  --output-path Collapsed-only-DAY30_only_horns-table-dada2.biom
+
+
+#
+qiime qurro differential-plot\
+  --i-ranks Full_model_differentials.qza\
+  --i-table Collapsed-only-DAY30_only_horns-table-dada2.qza\
+  --m-sample-metadata-file POSTPARTUM_mapping_sample_key.txt\
+  --m-feature-metadata-file taxonomy.qza\
+  --verbose \
+  --o-visualization qurro-plot.qzv
+
+qiime feature-table filter-features \
+  --i-table Collapsed-only-DAY30_only_horns-table-dada2.qza\
+  --m-metadata-file Top_30_Differentials.txt\
+  --o-filtered-table Kept-only-Songbird-Top30-results_Full_model.qza \
+  --p-no-exclude-ids
+
+qiime feature-table heatmap\
+  --i-table Kept-only-Songbird-Top30-results_Full_model.qza\
+  --m-sample-metadata-file POSTPARTUM_mapping_sample_key.txt\
+  --m-sample-metadata-column OBS\
+  --p-normalize \
+  --p-metric 'euclidean'\
+  --p-method 'average'\
+  --p-cluster 'both'\
+  --p-color-scheme 'rocket'\
+  --verbose \
+  --o-visualization heatmap-Songbird-Top30-results_Full_model.qzv
+
+qiime tools export \
+  --input-path heatmap-Songbird-Top30-results_Full_model.qzv\
+  --output-path .
+
