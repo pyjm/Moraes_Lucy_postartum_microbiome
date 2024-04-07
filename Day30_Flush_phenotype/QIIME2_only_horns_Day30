@@ -34,7 +34,7 @@ qiime diversity alpha-group-significance \
   --m-metadata-file POSTPARTUM_mapping_sample_key.txt\
   --o-visualization core-metrics-results/evenness-group-significance.qzv
 
-Beta diversity
+#Beta diversity
 
 qiime diversity beta-group-significance \
   --i-distance-matrix core-metrics-results/unweighted_unifrac_distance_matrix.qza \
