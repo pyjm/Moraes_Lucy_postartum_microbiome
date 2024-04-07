@@ -14,6 +14,7 @@ qiime feature-table summarize \
   --o-visualization only-DAY30_only_horns-table-dada2.qzv\
   --m-sample-metadata-file POSTPARTUM_mapping_sample_key.txt
 
+#Diversity analyses
 qiime diversity core-metrics-phylogenetic\
   --i-phylogeny rooted-tree.qza\
   --i-table only-DAY30_only_horns-table-dada2.qza\
