@@ -1,6 +1,5 @@
 #QIIME2 - Pipeline - Day 30
 
-
 #Remove samples Day 7
 qiime feature-table filter-samples \
   --i-table no-miss-table-dada2.qza\
