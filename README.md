@@ -1,8 +1,3 @@
-<html>
-<head>
-    <title>Repository Information</title>
-</head>
-<body>
 
 <h1>Repository Description</h1>
 
