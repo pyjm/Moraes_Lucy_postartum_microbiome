@@ -62,7 +62,7 @@ qiime tools export \
   --output-path Collapsed-only-DAY30_only_horns-table-dada2.biom
 
 
-#
+#Running QIIME2 plugin - Qurro
 qiime qurro differential-plot\
   --i-ranks Full_model_differentials.qza\
   --i-table Collapsed-only-DAY30_only_horns-table-dada2.qza\
