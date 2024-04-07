@@ -1,3 +1,4 @@
+#QIIME2 Day 30 only horns pipeline
 
 qiime feature-table filter-samples \
   --i-table only-DAY30_no-miss-table-dada2.qza\
@@ -6,7 +7,7 @@ qiime feature-table filter-samples \
   --p-exclude-ids \
   --o-filtered-table only-DAY30_only_horns-table-dada2.qza
 
-###FeatureTable and FeatureData summaries
+#FeatureTable
 qiime feature-table summarize \
   --i-table only-DAY30_only_horns-table-dada2.qza\
   --o-visualization only-DAY30_only_horns-table-dada2.qzv\
