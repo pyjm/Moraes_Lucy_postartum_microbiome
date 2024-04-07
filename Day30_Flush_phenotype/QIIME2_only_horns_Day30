@@ -1,5 +1,6 @@
 #QIIME2 Day 30 only horns pipeline
 
+#Eliminating External (enviroment control) samples.
 qiime feature-table filter-samples \
   --i-table only-DAY30_no-miss-table-dada2.qza\
   --m-metadata-file POSTPARTUM_mapping_sample_key.txt\
