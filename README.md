@@ -2,7 +2,7 @@
 
 This repository contains scripts and data analysis pipelines used for the manuscript "Systemic antibiotic treatment of cows with metritis early postpartum does not change the progression of uterine disease or the uterine microbiome at 1 month postpartum."
 
-##Directory Structure
+<h2>Directory Structure</h2>
 
 Day30_Flush_phenotype/QIIME2_Songbird_Qurro
 Description: Scripts for running Songbird and Qurro as QIIME2 plugins in samples collected at day 30 slaughter.
